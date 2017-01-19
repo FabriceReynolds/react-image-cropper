@@ -11,6 +11,7 @@ const Cropper = React.createClass({
         width: React.PropTypes.number,
         height: React.PropTypes.number,
         selectionNatural: React.PropTypes.bool,
+        limitHeight: React.PropTypes.bool,
         fixedRatio: React.PropTypes.bool,
         allowNewSelection: React.PropTypes.bool,
         disabled: React.PropTypes.bool,
@@ -23,6 +24,7 @@ const Cropper = React.createClass({
             width: 200,
             height: 200,
             selectionNatural: false,
+            limitHeight: false,
             fixedRatio: true,
             allowNewSelection: true,
             rate: 1,
@@ -54,6 +56,7 @@ const Cropper = React.createClass({
             allowNewSelection,
             frameHeight: fixedRatio ? (width / rate) : height,
             dragging: false,
+            imgPortrait: false,
             maxLeft: 0,
             maxTop: 0,
             action: null,
@@ -72,9 +75,10 @@ const Cropper = React.createClass({
 
     initStyles(){
         const container = ReactDOM.findDOMNode(this.refs.container)
-        this.setState({
-            img_width: container.offsetWidth
-        }, () => {
+        this.setState(this.state.imgPortrait
+            ? {img_height: container.offsetHeight}
+            : {img_width: container.offsetWidth}
+        , () => {
             // calc frame width height
             let {originX, originY, disabled} = this.props;
             if (disabled) return;
@@ -215,13 +219,26 @@ const Cropper = React.createClass({
             if (img && img.naturalWidth) {
                 const {beforeImageLoaded} = that.state;
 
-                var heightRatio = img.offsetWidth / img.naturalWidth;
-                var height = parseInt(img.naturalHeight * heightRatio);
+                if (that.props.limitHeight && img.naturalHeight > img.naturalWidth) {
+                    var widthRatio = img.offsetHeight / img.naturalHeight;
+                    var width = parseInt(img.naturalWidth * widthRatio);
 
-                that.setState({
-                    img_height: height,
-                    imgBeforeLoaded: true,
-                }, () => that.initStyles());
+                    that.setState({
+                        img_height: '100%',
+                        img_width: width,
+                        imgBeforeLoaded: true,
+                        imgPortrait: true,
+                    }, () => that.initStyles());
+                } else {
+                    var heightRatio = img.offsetWidth / img.naturalWidth;
+                    var height = parseInt(img.naturalHeight * heightRatio);
+
+                    that.setState({
+                        img_height: height,
+                        imgBeforeLoaded: true,
+                        imgPortrait: false,
+                    }, () => that.initStyles());
+                }
 
                 beforeImageLoaded();
 
